@@ -48,7 +48,7 @@ func main() {
 	var delay int
 	flag.BoolVar(&server, "server", false, "start the server")
 	flag.IntVar(&port, "port", 9998, "port to use")
-	flag.IntVar(&delay, "delay", 1000, "mms to wait before sending the data")
+	flag.IntVar(&delay, "delay", 10000, "mms to wait before sending the data")
 	flag.Parse()
 	if server {
 		startserver(port)
