@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -31,7 +32,7 @@ func read(delay int) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			cache = append(cache, line)
+			cache = append(cache, strings.TrimSpace(line))
 		}
 	}()
 	for {
