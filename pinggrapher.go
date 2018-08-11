@@ -89,8 +89,14 @@ func NewStats(lap Lap) Stats {
 
 func (l Lap) WriteTo(w io.Writer) (int64, error) {
 	var written int64 = 0
-	for _, f := range l {
-		b, err := fmt.Fprintf(w, "%f", f)
+	for i, f := range l {
+		var space string
+		if i == len(l)-1 {
+			space = ""
+		} else {
+			space = " "
+		}
+		b, err := fmt.Fprintf(w, "%f%s", f, space)
 		written += int64(b)
 		if err != nil {
 			return written, err
@@ -131,24 +137,71 @@ func read(pings chan float64) {
 	}()
 }
 
-func startserver(port int, pings chan float64) {
+func sendpast(file *os.File, delay int) {
+	defer file.Close()
+	reader := bufio.NewReader(file)
+	var statsarr []Stats
+	// read the file, compute the stats, and send
+	// every line represents on Lap (which will be converted to one Stats)
+	var linecount = 0
+	for {
+		// each loop reads one line
+		str, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Printf("Couldn't read past: %s", err)
+			return
+		}
+		linecount += 1
+		// on the first line, there is the metadata
+		if linecount == 1 {
+			continue
+		}
+		// every ping is stored, seperated by a space
+		floats := strings.Split(strings.TrimSpace(str), " ")
+		var lap Lap
+		for _, s := range floats {
+			f, err := strconv.ParseFloat(s, 64)
+			if err != nil {
+				log.Printf("Couldn't convert float from past: %s", err)
+				return
+			}
+			lap = append(lap, f)
+		}
+		statsarr = append(statsarr, NewStats(lap))
+	}
+	log.Printf("Sending past (%d elements)...", len(statsarr))
+	send(statsarr)
+}
+
+func startserver(port int, delay int, path string, pings chan float64) {
 	log.Printf("listening on :%d\n", port)
 	var clientidcount = 0
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("New client.")
+		log.Printf("New client #%d.", clientidcount)
 		conn, _, _, err := ws.UpgradeHTTP(r, w, nil)
 		if err != nil {
 			log.Print(err)
 			return
 		}
-		clientidcount += 1
 		writer := wsutil.NewWriter(conn, ws.StateServerSide, ws.OpText)
 		id := clients.Set(clientidcount, Client{
 			Writer:  writer,
 			Encoder: json.NewEncoder(writer),
 			Conn:    conn,
 		})
+		file, err := os.Open(path)
+		if err != nil {
+			log.Fatalf("Couldn't open cache file '%s': %s", path, err)
+		}
+		clientidcount += 1
 		go func() {
+			defer conn.Close()
+			sendpast(file, delay)
+			// this will stop blocking as soon as the client does something
+			// That is, send a message (which they shouldn't do) or close the
+			// connection
 			header, err := wsutil.NewReader(conn, ws.StateServerSide).NextFrame()
 			if err != nil {
 				log.Printf("Error while reading header: %s", err)
@@ -163,9 +216,9 @@ func startserver(port int, pings chan float64) {
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
-func send(stats Stats) {
+func send(statsarr []Stats) {
 	clients.ForEach(func(id int, client Client) {
-		if err := client.Encoder.Encode([]Stats{stats}); err != nil {
+		if err := client.Encoder.Encode(statsarr); err != nil {
 			log.Print("Couldn't encode/write:", err)
 			clients.Delete(id)
 		}
@@ -209,7 +262,7 @@ func write(delay int, path string, pings chan float64) {
 			if err := w.Flush(); err != nil {
 				log.Fatalf("Couldn't flush file: %s", err)
 			}
-			go send(NewStats(lap))
+			go send([]Stats{NewStats(lap)})
 			lap = Lap{}
 		}
 	}
@@ -225,5 +278,5 @@ func main() {
 	var pings = make(chan float64)
 	go read(pings)
 	go write(delay, path, pings)
-	startserver(port, pings)
+	startserver(port, delay, path, pings)
 }
