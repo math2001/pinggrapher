@@ -53,7 +53,7 @@ const socket = {
     this.socket.onmessage = this.onmessage.bind(this)
   },
   onmessage(e) {
-    chart.addPings(JSON.parse(e.data))
+    chart.addPings([JSON.parse(e.data)])
   }
 }
 

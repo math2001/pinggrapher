@@ -5,13 +5,14 @@ import (
 	"flag"
 	"io"
 	"log"
+	"math"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
 
-func read(delay int) {
-	var cache []string
+func read(delay int, pings chan int) {
 	ticker := time.NewTicker(time.Duration(delay) * 1000 * 1000 * time.Nanosecond)
 	defer ticker.Stop()
 	go func() {
@@ -26,26 +27,34 @@ func read(delay int) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			cache = append(cache, strings.TrimSpace(line))
+			float, err := strconv.ParseFloat(strings.TrimSpace(line), 64)
+			if err != nil {
+				log.Printf("Couldn't convert '%s': %s", line, err)
+			}
+			pings <- int(math.Round(float))
+
 		}
 	}()
-	for {
-		<-ticker.C
-		// send(cache)
-		cache = []string{}
-	}
+	// for {
+	// 	<-ticker.C
+	// 	for _, e := range cache {
+	// 		float, err := strconv.ParseFloat(e, 64)
+	// 		if err != nil {
+	// 			log.Printf("Couldn't convert '%s': %s", e, err)
+	// 		}
+	// 		pings <- int(math.Round(float))
+	// 	}
+	// 	cache = []string{}
+	// }
 }
 
 func main() {
-	var server bool
 	var port int
 	var delay int
-	flag.BoolVar(&server, "server", false, "start the server")
 	flag.IntVar(&port, "port", 9998, "port to use")
 	flag.IntVar(&delay, "delay", 10000, "mms to wait before sending the data")
 	flag.Parse()
-	if server {
-		startserver(port)
-	}
-	read(delay)
+	var pings = make(chan int)
+	go read(delay, pings)
+	startserver(port, pings)
 }
