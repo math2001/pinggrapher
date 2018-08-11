@@ -31,7 +31,9 @@ type Client struct {
 type Lap []float64
 
 type Stats struct {
-	Average, Max, Min float64
+	Average float64 `json:"average"`
+	Min     float64 `json:"min"`
+	Max     float64 `json:"max"`
 }
 
 func NewStats(lap Lap) Stats {
