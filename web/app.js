@@ -17,11 +17,29 @@ const chart = {
       type: 'line',
       data: data,
       options: {
+        maintainAspectRatio: false,
+        // responsive: false,
+        title: {
+          display: true,
+          text: 'Pings',
+          position: 'top',
+        },
+        legend: {
+          display: false,
+        },
         scales: {
           xAxes: [
             {
               ticks: {
                 display: false
+              },
+            }
+          ],
+          yAxes: [
+            {
+              ticks: {
+                beginAtZero: true,
+                callback: label => label + ' ms'
               }
             }
           ]

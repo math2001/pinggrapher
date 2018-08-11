@@ -3,10 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Ping graphher</title>
+    <style>
+.content {
+    margin: auto;
+    width: 90vw;
+    height: 90vh;
+    top: 5vh;
+    position: relative;
+}
+    </style>
 </head>
 <body>
-    <h1>Pings</h1>
-    <canvas id="chart" width='640' height='400'></canvas>
+    <section class="content">
+        <canvas id="chart" width='640px' height='400px'></canvas>
+    </section>
     <script src='//cdn.jsdelivr.net/npm/chart.js@2.7.2/dist/Chart.bundle.min.js'></script>
     <script src='./app.js'></script>
 </body>
