@@ -11,7 +11,7 @@ but it just so old). So, with my desktop computer (that's under windows), I use
 it as a sort of web server, where I do all of my dev from. The problem being
 that when our router started to get slow for some reason (500ms ping), using ssh
 was somewhat annoying. So, I made this little thing to try to find some patterns
-and find the guilty on our local network :smile:
+and find the culprit on our local network :smile:
 
 ## Example
 
