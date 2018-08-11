@@ -109,7 +109,7 @@ func read(pings chan float64) {
 	}()
 }
 
-func sendpast(file *os.File, delay int) {
+func sendpast(file *os.File) {
 	defer file.Close()
 	decoder := json.NewDecoder(file)
 	var timesarr [][]float64
@@ -136,7 +136,7 @@ func sendpast(file *os.File, delay int) {
 	}
 }
 
-func startserver(port int, delay int, path string, pings chan float64) {
+func startserver(port int, path string, pings chan float64) {
 	log.Printf("listening on :%d\n", port)
 	var clientidcount = 0
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
@@ -159,7 +159,7 @@ func startserver(port int, delay int, path string, pings chan float64) {
 		clientidcount += 1
 		go func() {
 			defer conn.Close()
-			sendpast(file, delay)
+			sendpast(file)
 			// this will stop blocking as soon as the client does something
 			// That is, send a message (which they shouldn't do) or close the
 			// connection
@@ -202,7 +202,7 @@ func write(delay int, path string, pings chan float64) {
 	// re-write everything everytime)
 	encoder := json.NewEncoder(w)
 
-	ticker := time.NewTicker(time.Duration(delay) * time.Millisecond)
+	ticker := time.NewTicker(time.Duration(delay) * time.Second)
 	defer ticker.Stop()
 
 	var times = []float64{float64(time.Now().Unix())}
@@ -231,11 +231,11 @@ func main() {
 	var port, delay int
 	var path string
 	flag.IntVar(&port, "port", 9998, "port to use")
-	flag.IntVar(&delay, "delay", 60*1000, "ms to wait before sending the data")
+	flag.IntVar(&delay, "delay", 60, "seconds to wait before sending the data")
 	flag.StringVar(&path, "path", "./.pings", "path to the filename to store information")
 	flag.Parse()
 	var pings = make(chan float64)
 	go read(pings)
 	go write(delay, path, pings)
-	startserver(port, delay, path, pings)
+	startserver(port, path, pings)
 }
