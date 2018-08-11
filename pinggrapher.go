@@ -29,7 +29,7 @@ type Client struct {
 }
 
 func read(delay int, pings chan float64) {
-	ticker := time.NewTicker(time.Duration(delay) * 1000 * 1000 * time.Nanosecond)
+	ticker := time.NewTicker(time.Duration(delay) * time.Millisecond)
 	defer ticker.Stop()
 	go func() {
 		var line string
@@ -97,7 +97,7 @@ func main() {
 	var port int
 	var delay int
 	flag.IntVar(&port, "port", 9998, "port to use")
-	flag.IntVar(&delay, "delay", 10000, "mms to wait before sending the data")
+	flag.IntVar(&delay, "delay", 60*1000, "ms to wait before sending the data")
 	flag.Parse()
 	var pings = make(chan float64)
 	go read(delay, pings)
