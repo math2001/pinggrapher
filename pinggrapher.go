@@ -26,10 +26,11 @@ type Clients struct {
 	mux sync.Mutex
 }
 
-func (c *Clients) Set(n int, e Client) {
+func (c *Clients) Set(n int, e Client) int {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	c.m[n] = e
+	return n
 }
 
 func (c *Clients) Get(n int) (Client, bool) {
@@ -142,11 +143,21 @@ func startserver(port int, pings chan float64) {
 		}
 		clientidcount += 1
 		writer := wsutil.NewWriter(conn, ws.StateServerSide, ws.OpText)
-		clients.Set(clientidcount, Client{
+		id := clients.Set(clientidcount, Client{
 			Writer:  writer,
 			Encoder: json.NewEncoder(writer),
 			Conn:    conn,
 		})
+		go func() {
+			header, err := wsutil.NewReader(conn, ws.StateServerSide).NextFrame()
+			if err != nil {
+				log.Printf("Error while reading header: %s", err)
+			}
+			if header.OpCode == ws.OpClose {
+				log.Printf("Client %d left", id)
+				clients.Delete(id)
+			}
+		}()
 	})
 	http.Handle("/", http.FileServer(http.Dir("./web")))
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
