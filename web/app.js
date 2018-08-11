@@ -7,20 +7,23 @@ const chart = {
         {
           data: [],
           label: 'average',
-          backgroundColor: 'rgba(50, 100, 255, 0.2)',
-          borderColor: 'rgba(100, 100, 255, 0.5)'
+          backgroundColor: 'rgba(255, 150, 100, 0.2)',
+          borderColor: 'rgba(255, 150, 100, 0.5)',
+          fill: false,
         },
         {
           data: [],
           label: 'min',
-          backgroundColor: 'rgba(255, 150, 100, 0.2)',
-          borderColor: 'rgba(255, 150, 100, 0.5)'
+          backgroundColor: 'rgba(50, 100, 255, 0.2)',
+          borderColor: 'rgba(100, 100, 255, 0.5)',
+          fill: false,
         },
         {
           data: [],
           label: 'max',
-          backgroundColor: 'rgba(50, 100, 255, 0.2)',
-          borderColor: 'rgba(100, 100, 255, 0.5)'
+          backgroundColor: 'rgba(255, 100, 255, 0.2)',
+          borderColor: 'rgba(255, 100, 255, 0.5)',
+          fill: false,
         },
       ]
     }
@@ -35,17 +38,7 @@ const chart = {
           text: 'Pings',
           position: 'top',
         },
-        legend: {
-          display: false,
-        },
         scales: {
-          xAxes: [
-            {
-              ticks: {
-                display: false
-              },
-            }
-          ],
           yAxes: [
             {
               ticks: {
