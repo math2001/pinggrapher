@@ -19,13 +19,15 @@ import (
 	"github.com/gobwas/ws/wsutil"
 )
 
-// use a map instead of slice cause otherwise it's a pain to delete them when
-// they decide to leave
+// Clients is a map with a mutex. People shouldn't touch .m themself, but use
+// the API. Note that it's a map and not a slice, just to make easier to delete
+// clients when they decide to leave
 type Clients struct {
 	m   map[int]Client
 	mux sync.Mutex
 }
 
+// Set client for id
 func (c *Clients) Set(n int, e Client) int {
 	c.mux.Lock()
 	defer c.mux.Unlock()
@@ -33,6 +35,7 @@ func (c *Clients) Set(n int, e Client) int {
 	return n
 }
 
+// Get client from id
 func (c *Clients) Get(n int) (Client, bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
@@ -40,18 +43,22 @@ func (c *Clients) Get(n int) (Client, bool) {
 	return e, ok
 }
 
+// Length returns the number of active clients
 func (c *Clients) Length() int {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	return len(c.m)
 }
 
+// Delete a client from its id
 func (c *Clients) Delete(id int) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	delete(c.m, id)
 }
 
+// ForEach loops around each client. Note that the mutex for the entire
+// duration of all the callbacks *combined*
 func (c *Clients) ForEach(fn func(int, Client)) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
@@ -65,12 +72,14 @@ func (c *Clients) ForEach(fn func(int, Client)) {
 var clients = Clients{m: make(map[int]Client)}
 var clientsmutex sync.Mutex
 
+// Client doesn't have a writer because we don't care what the browser says
 type Client struct {
 	Writer  *wsutil.Writer
 	Encoder *json.Encoder
 	Conn    net.Conn
 }
 
+// Stats are the intersting stuff. They are computed from a list of times
 type Stats struct {
 	Average   float64 `json:"average"`
 	Min       float64 `json:"min"`
@@ -78,6 +87,7 @@ type Stats struct {
 	Timestamp int64   `json:"timestamp"`
 }
 
+// NewStats compute the stats from times and returns a Stats object
 func NewStats(times []float64, timestamp int64) Stats {
 	return Stats{
 		Timestamp: timestamp,
@@ -155,7 +165,7 @@ func startserver(port int, path string, pings chan float64) {
 		if err != nil {
 			log.Fatalf("Couldn't open cache file '%s': %s", path, err)
 		}
-		clientidcount += 1
+		clientidcount++
 		go func() {
 			defer conn.Close()
 			sendpast(file)
