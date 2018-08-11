@@ -16,6 +16,17 @@ const chart = {
     this.chart = new Chart(ctx, {
       type: 'line',
       data: data,
+      options: {
+        scales: {
+          xAxes: [
+            {
+              ticks: {
+                display: false
+              }
+            }
+          ]
+        }
+      }
     })
   },
 
