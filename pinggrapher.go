@@ -72,10 +72,10 @@ type Client struct {
 }
 
 type Stats struct {
-	Timestamp int64   `json:"timestamp"`
 	Average   float64 `json:"average"`
 	Min       float64 `json:"min"`
 	Max       float64 `json:"max"`
+	Timestamp int64   `json:"timestamp"`
 }
 
 func NewStats(times []float64, timestamp int64) Stats {
@@ -112,19 +112,23 @@ func read(pings chan float64) {
 func sendpast(file *os.File, delay int) {
 	defer file.Close()
 	decoder := json.NewDecoder(file)
+	var timesarr [][]float64
 	var statsarr []Stats
 	// read the file, compute the stats, and send
 	// every line represents on Lap (which will be converted to one Stats)
 	for {
-		var s Stats
-		if err := decoder.Decode(&s); err == io.EOF {
+		var times []float64
+		if err := decoder.Decode(&times); err == io.EOF {
 			break
 		} else if err != nil {
 			log.Printf("Couldn't decode: %s", err)
 		}
-		statsarr = append(statsarr, s)
+		timesarr = append(timesarr, times)
+		// compute the stats. The first element is the timestamp
+		statsarr = append(statsarr, NewStats(times[1:], int64(times[0])))
+		fmt.Println(statsarr[len(statsarr)-1].Max)
 	}
-	if len(statsarr) != 0 {
+	if len(timesarr) != 0 {
 		log.Printf("Sending past (%d elements)...", len(statsarr))
 		send(statsarr)
 	} else {
@@ -201,23 +205,24 @@ func write(delay int, path string, pings chan float64) {
 	ticker := time.NewTicker(time.Duration(delay) * time.Millisecond)
 	defer ticker.Stop()
 
-	var times []float64
+	var times = []float64{float64(time.Now().Unix())}
 
 	for {
 		select {
 		case ping := <-pings:
 			times = append(times, ping)
 		case <-ticker.C:
-			var stats = NewStats(times, time.Now().Unix())
 			log.Printf("Save lap to file and send to %d client(s)", clients.Length())
-			if err := encoder.Encode(stats); err != nil {
+			// we save the raw times so that if we want add some metric (like
+			// average, etc), it's easy to do
+			if err := encoder.Encode(times); err != nil {
 				log.Fatalf("Couldn't write Lap to file: %s", err)
 			}
 			if err := w.Flush(); err != nil {
 				log.Fatalf("Couldn't flush file: %s", err)
 			}
-			go send([]Stats{stats})
-			times = []float64{}
+			go send([]Stats{NewStats(times[1:], int64(times[0]))})
+			times = []float64{float64(time.Now().Unix())}
 		}
 	}
 }

@@ -4,7 +4,7 @@
 test: pinggrapher
 	ping 192.168.1.1 \
 		| awk  '/from/ { split($$7, resArr, "="); print resArr[2]; fflush() }'\
-		| ./pinggrapher
+		| ./pinggrapher -delay 2000
 
 
 run: pinggrapher
