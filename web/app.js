@@ -6,10 +6,22 @@ const chart = {
       datasets: [
         {
           data: [],
-          label: 'pings',
+          label: 'average',
           backgroundColor: 'rgba(50, 100, 255, 0.2)',
           borderColor: 'rgba(100, 100, 255, 0.5)'
-        }
+        },
+        {
+          data: [],
+          label: 'min',
+          backgroundColor: 'rgba(255, 150, 100, 0.2)',
+          borderColor: 'rgba(255, 150, 100, 0.5)'
+        },
+        {
+          data: [],
+          label: 'max',
+          backgroundColor: 'rgba(50, 100, 255, 0.2)',
+          borderColor: 'rgba(100, 100, 255, 0.5)'
+        },
       ]
     }
 
@@ -18,7 +30,6 @@ const chart = {
       data: data,
       options: {
         maintainAspectRatio: false,
-        // responsive: false,
         title: {
           display: true,
           text: 'Pings',
@@ -48,14 +59,16 @@ const chart = {
     })
   },
 
-  addPings(times) {
+  addStats(stats) {
+    // { min, max, average }
+    console.log('add stats', stats)
     last = this.chart.data.labels[this.chart.data.labels.length-1] || 0
-    for (let i = 1; i <= times.length; i++) {
-      this.chart.data.labels.push(last + i)
-      this.chart.data.datasets[0].data.push(times[i-1])
-    }
+    this.chart.data.labels.push(last + 1)
+    this.chart.data.datasets[0].data.push(stats.average)
+    this.chart.data.datasets[1].data.push(stats.min)
+    this.chart.data.datasets[2].data.push(stats.max)
     this.chart.update()
-  },
+  }
 }
 
 const socket = {
@@ -64,7 +77,7 @@ const socket = {
     this.socket.onmessage = this.onmessage.bind(this)
   },
   onmessage(e) {
-    chart.addPings([JSON.parse(e.data)])
+    chart.addStats(JSON.parse(e.data))
   }
 }
 
