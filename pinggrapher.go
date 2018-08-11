@@ -126,7 +126,6 @@ func sendpast(file *os.File) {
 		timesarr = append(timesarr, times)
 		// compute the stats. The first element is the timestamp
 		statsarr = append(statsarr, NewStats(times[1:], int64(times[0])))
-		fmt.Println(statsarr[len(statsarr)-1].Max)
 	}
 	if len(timesarr) != 0 {
 		log.Printf("Sending past (%d elements)...", len(statsarr))
