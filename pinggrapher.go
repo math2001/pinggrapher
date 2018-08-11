@@ -124,8 +124,12 @@ func sendpast(file *os.File, delay int) {
 		}
 		statsarr = append(statsarr, s)
 	}
-	log.Printf("Sending past (%d elements)...", len(statsarr))
-	send(statsarr)
+	if len(statsarr) != 0 {
+		log.Printf("Sending past (%d elements)...", len(statsarr))
+		send(statsarr)
+	} else {
+		log.Printf("No past to send.")
+	}
 }
 
 func startserver(port int, delay int, path string, pings chan float64) {
