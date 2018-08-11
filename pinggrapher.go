@@ -114,8 +114,8 @@ func sendpast(file *os.File) {
 	decoder := json.NewDecoder(file)
 	var timesarr [][]float64
 	var statsarr []Stats
-	// read the file, compute the stats, and send
-	// every line represents on Lap (which will be converted to one Stats)
+	// read the file, compute the stats, and send every line (that are a list)
+	// represents one set of times (which will be converted to one Stats)
 	for {
 		var times []float64
 		if err := decoder.Decode(&times); err == io.EOF {
@@ -211,11 +211,11 @@ func write(delay int, path string, pings chan float64) {
 		case ping := <-pings:
 			times = append(times, ping)
 		case <-ticker.C:
-			log.Printf("Save lap to file and send to %d client(s)", clients.Length())
+			log.Printf("Save times to file and send to %d client(s)", clients.Length())
 			// we save the raw times so that if we want add some metric (like
 			// average, etc), it's easy to do
 			if err := encoder.Encode(times); err != nil {
-				log.Fatalf("Couldn't write Lap to file: %s", err)
+				log.Fatalf("Couldn't write times to file: %s", err)
 			}
 			if err := w.Flush(); err != nil {
 				log.Fatalf("Couldn't flush file: %s", err)
