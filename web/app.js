@@ -61,7 +61,6 @@ const chart = {
 
   addStats(stats) {
     // { min, max, average }
-    console.log('add stats', stats)
     last = this.chart.data.labels[this.chart.data.labels.length-1] || 0
     this.chart.data.labels.push(last + 1)
     this.chart.data.datasets[0].data.push(stats.average)

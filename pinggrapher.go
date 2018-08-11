@@ -12,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gobwas/ws"
@@ -20,7 +21,48 @@ import (
 
 // use a map instead of slice cause otherwise it's a pain to delete them when
 // they decide to leave
-var clients = make(map[int]Client)
+type Clients struct {
+	m   map[int]Client
+	mux sync.Mutex
+}
+
+func (c *Clients) Set(n int, e Client) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	c.m[n] = e
+}
+
+func (c *Clients) Get(n int) (Client, bool) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	e, ok := c.m[n]
+	return e, ok
+}
+
+func (c *Clients) Length() int {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	return len(c.m)
+}
+
+func (c *Clients) Delete(id int) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	delete(c.m, id)
+}
+
+func (c *Clients) ForEach(fn func(int, Client)) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	// lock for the whole duration of every for loop, just in case
+	// not too sure if I could just lock during the .Get
+	for id, client := range c.m {
+		fn(id, client)
+	}
+}
+
+var clients = Clients{m: make(map[int]Client)}
+var clientsmutex sync.Mutex
 
 type Client struct {
 	Writer  *wsutil.Writer
@@ -100,27 +142,27 @@ func startserver(port int, pings chan float64) {
 		}
 		clientidcount += 1
 		writer := wsutil.NewWriter(conn, ws.StateServerSide, ws.OpText)
-		clients[clientidcount] = Client{
+		clients.Set(clientidcount, Client{
 			Writer:  writer,
 			Encoder: json.NewEncoder(writer),
 			Conn:    conn,
-		}
+		})
 	})
 	http.Handle("/", http.FileServer(http.Dir("./web")))
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
 func send(stats Stats) {
-	for id, client := range clients {
+	clients.ForEach(func(id int, client Client) {
 		if err := client.Encoder.Encode(stats); err != nil {
 			log.Print("Couldn't encode/write:", err)
-			delete(clients, id)
+			clients.Delete(id)
 		}
 		if err := client.Writer.Flush(); err != nil {
 			log.Print("Couldn't flush:", err)
-			delete(clients, id)
+			clients.Delete(id)
 		}
-	}
+	})
 }
 
 func write(delay int, path string, pings chan float64) {
@@ -149,7 +191,7 @@ func write(delay int, path string, pings chan float64) {
 		case ping := <-pings:
 			lap = append(lap, ping)
 		case <-ticker.C:
-			log.Printf("Save lap to file and send to %d client(s)", len(clients))
+			log.Printf("Save lap to file and send to %d client(s)", clients.Length())
 			if _, err := lap.WriteTo(w); err != nil {
 				log.Fatalf("Couldn't write Lap to file: %s", err)
 			}
