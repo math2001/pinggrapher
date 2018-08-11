@@ -1,6 +1,6 @@
 # Ping graph
 
-Graph the pings
+Graph the pings.
 
 ## Example
 

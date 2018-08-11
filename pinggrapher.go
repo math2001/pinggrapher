@@ -72,7 +72,7 @@ func read(delay int, pings chan float64) {
 }
 
 func startserver(port int, pings chan float64) {
-	fmt.Printf("listening on :%d\n", port)
+	log.Printf("listening on :%d\n", port)
 	var clientidcount = 0
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("New client.")
