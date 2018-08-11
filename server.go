@@ -10,7 +10,7 @@ import (
 	"github.com/gobwas/ws/wsutil"
 )
 
-func startserver(port int, pings chan int) {
+func startserver(port int, pings chan float64) {
 	fmt.Printf("listening on :%d\n", port)
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, _, _, err := ws.UpgradeHTTP(r, w, nil)
