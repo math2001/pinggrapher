@@ -71,48 +71,20 @@ type Client struct {
 	Conn    net.Conn
 }
 
-type Lap []float64
-
 type Stats struct {
-	Average float64 `json:"average"`
-	Min     float64 `json:"min"`
-	Max     float64 `json:"max"`
+	Timestamp int64
+	Average   float64 `json:"average"`
+	Min       float64 `json:"min"`
+	Max       float64 `json:"max"`
 }
 
-func NewStats(lap Lap) Stats {
+func NewStats(times []float64, timestamp int64) Stats {
 	return Stats{
-		Max:     Max(lap),
-		Min:     Min(lap),
-		Average: Average(lap),
+		Timestamp: timestamp,
+		Max:       Max(times),
+		Min:       Min(times),
+		Average:   Average(times),
 	}
-}
-
-func (l Lap) WriteTo(w io.Writer) (int64, error) {
-	var written int64 = 0
-	for i, f := range l {
-		var space string
-		if i == len(l)-1 {
-			space = ""
-		} else {
-			space = " "
-		}
-		b, err := fmt.Fprintf(w, "%f%s", f, space)
-		written += int64(b)
-		if err != nil {
-			return written, err
-		}
-	}
-	b, err := fmt.Fprint(w, "\n")
-	written += int64(b)
-	if err != nil {
-		return written, err
-	}
-	return written, nil
-}
-
-type Storer struct {
-	Start time.Time
-	Laps  []Lap
 }
 
 func read(pings chan float64) {
@@ -139,37 +111,18 @@ func read(pings chan float64) {
 
 func sendpast(file *os.File, delay int) {
 	defer file.Close()
-	reader := bufio.NewReader(file)
+	decoder := json.NewDecoder(file)
 	var statsarr []Stats
 	// read the file, compute the stats, and send
 	// every line represents on Lap (which will be converted to one Stats)
-	var linecount = 0
 	for {
-		// each loop reads one line
-		str, err := reader.ReadString('\n')
-		if err == io.EOF {
+		var s Stats
+		if err := decoder.Decode(&s); err == io.EOF {
 			break
 		} else if err != nil {
-			log.Printf("Couldn't read past: %s", err)
-			return
+			log.Printf("Couldn't decode: %s", err)
 		}
-		linecount += 1
-		// on the first line, there is the metadata
-		if linecount == 1 {
-			continue
-		}
-		// every ping is stored, seperated by a space
-		floats := strings.Split(strings.TrimSpace(str), " ")
-		var lap Lap
-		for _, s := range floats {
-			f, err := strconv.ParseFloat(s, 64)
-			if err != nil {
-				log.Printf("Couldn't convert float from past: %s", err)
-				return
-			}
-			lap = append(lap, f)
-		}
-		statsarr = append(statsarr, NewStats(lap))
+		statsarr = append(statsarr, s)
 	}
 	log.Printf("Sending past (%d elements)...", len(statsarr))
 	send(statsarr)
@@ -240,30 +193,30 @@ func write(delay int, path string, pings chan float64) {
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
-
-	storer := Storer{Start: time.Now()}
-
-	fmt.Fprintf(w, "%d # %s\n", storer.Start.Unix(), storer.Start.Format(time.UnixDate))
+	// we write in json and not gob for reusability (and so we don't have to
+	// re-write everything everytime)
+	encoder := json.NewEncoder(w)
 
 	ticker := time.NewTicker(time.Duration(delay) * time.Millisecond)
 	defer ticker.Stop()
 
-	var lap Lap
+	var times []float64
 
 	for {
 		select {
 		case ping := <-pings:
-			lap = append(lap, ping)
+			times = append(times, ping)
 		case <-ticker.C:
+			var stats = NewStats(times, time.Now().Unix())
 			log.Printf("Save lap to file and send to %d client(s)", clients.Length())
-			if _, err := lap.WriteTo(w); err != nil {
+			if err := encoder.Encode(stats); err != nil {
 				log.Fatalf("Couldn't write Lap to file: %s", err)
 			}
 			if err := w.Flush(); err != nil {
 				log.Fatalf("Couldn't flush file: %s", err)
 			}
-			go send([]Stats{NewStats(lap)})
-			lap = Lap{}
+			go send([]Stats{stats})
+			times = []float64{}
 		}
 	}
 }
