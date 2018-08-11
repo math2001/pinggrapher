@@ -26,7 +26,10 @@ func startserver(port int, pings chan float64) {
 			)
 			for {
 				ping := <-pings
-				encoder.Encode(ping)
+				if err := encoder.Encode(ping); err != nil {
+					log.Print(err)
+					return
+				}
 				if err := w.Flush(); err != nil {
 					log.Print(err)
 					return
