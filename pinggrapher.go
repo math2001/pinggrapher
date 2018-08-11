@@ -28,9 +28,43 @@ type Client struct {
 	Conn    net.Conn
 }
 
-func read(delay int, pings chan float64) {
-	ticker := time.NewTicker(time.Duration(delay) * time.Millisecond)
-	defer ticker.Stop()
+type Lap []float64
+
+type Stats struct {
+	Average, Max, Min float64
+}
+
+func NewStats(lap Lap) Stats {
+	return Stats{
+		Max:     Max(lap),
+		Min:     Min(lap),
+		Average: Average(lap),
+	}
+}
+
+func (l Lap) WriteTo(w io.Writer) (int64, error) {
+	var written int64 = 0
+	for _, f := range l {
+		b, err := fmt.Fprintf(w, "%f", f)
+		written += int64(b)
+		if err != nil {
+			return written, err
+		}
+	}
+	b, err := fmt.Fprint(w, "\n")
+	written += int64(b)
+	if err != nil {
+		return written, err
+	}
+	return written, nil
+}
+
+type Storer struct {
+	Start time.Time
+	Laps  []Lap
+}
+
+func read(pings chan float64) {
 	go func() {
 		var line string
 		var err error
@@ -50,25 +84,6 @@ func read(delay int, pings chan float64) {
 			pings <- ping
 		}
 	}()
-	defer func() {
-		log.Println("Close all connections")
-		for _, client := range clients {
-			client.Conn.Close()
-		}
-	}()
-	for {
-		ping := <-pings
-		for id, client := range clients {
-			if err := client.Encoder.Encode(ping); err != nil {
-				log.Print("Couldn't encode/write:", err)
-				delete(clients, id)
-			}
-			if err := client.Writer.Flush(); err != nil {
-				log.Print("Couldn't flush:", err)
-				delete(clients, id)
-			}
-		}
-	}
 }
 
 func startserver(port int, pings chan float64) {
@@ -93,13 +108,67 @@ func startserver(port int, pings chan float64) {
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
+func send(stats Stats) {
+	for id, client := range clients {
+		if err := client.Encoder.Encode(stats); err != nil {
+			log.Print("Couldn't encode/write:", err)
+			delete(clients, id)
+		}
+		if err := client.Writer.Flush(); err != nil {
+			log.Print("Couldn't flush:", err)
+			delete(clients, id)
+		}
+	}
+}
+
+func write(delay int, path string, pings chan float64) {
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		log.Fatal("Target file already exists. Not implemented.")
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		log.Fatalf("Couldn't create '%s': %s", path, err)
+	}
+	defer f.Close()
+
+	w := bufio.NewWriter(f)
+
+	storer := Storer{Start: time.Now()}
+
+	fmt.Fprintf(w, "%d # %s\n", storer.Start.Unix(), storer.Start.Format(time.UnixDate))
+
+	ticker := time.NewTicker(time.Duration(delay) * time.Millisecond)
+	defer ticker.Stop()
+
+	var lap Lap
+
+	for {
+		select {
+		case ping := <-pings:
+			lap = append(lap, ping)
+		case <-ticker.C:
+			log.Printf("Save lap to file and send to %d client(s)", len(clients))
+			if _, err := lap.WriteTo(w); err != nil {
+				log.Fatalf("Couldn't write Lap to file: %s", err)
+			}
+			if err := w.Flush(); err != nil {
+				log.Fatalf("Couldn't flush file: %s", err)
+			}
+			go send(NewStats(lap))
+			lap = Lap{}
+		}
+	}
+}
+
 func main() {
-	var port int
-	var delay int
+	var port, delay int
+	var path string
 	flag.IntVar(&port, "port", 9998, "port to use")
 	flag.IntVar(&delay, "delay", 60*1000, "ms to wait before sending the data")
+	flag.StringVar(&path, "path", "./.pings", "path to the filename to store information")
 	flag.Parse()
 	var pings = make(chan float64)
-	go read(delay, pings)
+	go read(pings)
+	go write(delay, path, pings)
 	startserver(port, pings)
 }
