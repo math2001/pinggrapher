@@ -47,6 +47,17 @@ const chart = {
   },
 }
 
+const socket = {
+  init() {
+    this.socket = new WebSocket(`ws://${location.host}/ws`)
+    this.socket.onmessage = this.onmessage.bind(this)
+  },
+  onmessage(e) {
+    chart.addPings(JSON.parse(e.data))
+  }
+}
+
 window.addEventListener('load', e => {
   chart.init()
+  socket.init()
 })
