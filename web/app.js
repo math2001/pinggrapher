@@ -6,30 +6,31 @@ const chart = {
       datasets: [
         {
           data: [],
+          backgroundColor: 'rgba(50, 100, 255, 0.2)',
+          borderColor: 'rgba(100, 100, 255, 0.8)',
           label: 'average',
-          backgroundColor: 'rgba(255, 150, 100, 0.2)',
-          borderColor: 'rgba(255, 150, 100, 0.5)',
           fill: false,
+          type: 'line',
         },
         {
           data: [],
           label: 'min',
-          backgroundColor: 'rgba(50, 100, 255, 0.2)',
-          borderColor: 'rgba(100, 100, 255, 0.5)',
+          backgroundColor: 'rgba(230, 180, 100, 0.5)',
+          borderColor: 'rgba(250, 190, 100, 0.8)',
           fill: false,
         },
         {
           data: [],
           label: 'max',
-          backgroundColor: 'rgba(255, 100, 255, 0.2)',
-          borderColor: 'rgba(255, 100, 255, 0.5)',
+          backgroundColor: 'rgba(255, 81, 58, 0.5)',
+          borderColor: 'rgba(255, 96, 76, 0.8)',
           fill: false,
         },
       ]
     }
 
     this.chart = new Chart(ctx, {
-      type: 'line',
+      type: 'bar',
       data: data,
       options: {
         maintainAspectRatio: false,
@@ -54,7 +55,7 @@ const chart = {
 
   formatTime(timestamp) {
     const date = new Date(timestamp * 1000)
-    return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+    return `${date.getHours()}:${date.getMinutes()}`
   },
 
   addStats(statsArr) {
