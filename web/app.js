@@ -52,13 +52,17 @@ const chart = {
     })
   },
 
-  addStats(stats) {
+  addStats(statsArr) {
     // { min, max, average }
-    last = this.chart.data.labels[this.chart.data.labels.length-1] || 0
-    this.chart.data.labels.push(last + 1)
-    this.chart.data.datasets[0].data.push(stats.average)
-    this.chart.data.datasets[1].data.push(stats.min)
-    this.chart.data.datasets[2].data.push(stats.max)
+    const last = this.chart.data.labels[this.chart.data.labels.length-1] || 0
+    let stats;
+    for (let i = 1; i <= statsArr.length; i++) {
+      stats = statsArr[i-1]
+      this.chart.data.labels.push(last + i)
+      this.chart.data.datasets[0].data.push(stats.average)
+      this.chart.data.datasets[1].data.push(stats.min)
+      this.chart.data.datasets[2].data.push(stats.max)
+    }
     this.chart.update()
   }
 }

@@ -165,7 +165,7 @@ func startserver(port int, pings chan float64) {
 
 func send(stats Stats) {
 	clients.ForEach(func(id int, client Client) {
-		if err := client.Encoder.Encode(stats); err != nil {
+		if err := client.Encoder.Encode([]Stats{stats}); err != nil {
 			log.Print("Couldn't encode/write:", err)
 			clients.Delete(id)
 		}
@@ -178,7 +178,7 @@ func send(stats Stats) {
 
 func write(delay int, path string, pings chan float64) {
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		log.Fatal("Target file already exists. Not implemented.")
+		log.Fatal("Target file already exists.")
 	}
 	f, err := os.Create(path)
 	if err != nil {
