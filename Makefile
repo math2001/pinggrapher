@@ -1,4 +1,4 @@
-.PHONY: run
+.PHONY: run test clean
 .SILENT:
 
 test: pinggrapher
@@ -12,3 +12,6 @@ run: pinggrapher
 
 pinggrapher: *.go
 	go build -i -o pinggrapher
+
+clean:
+	mv .pings /tmp # safer than rm
