@@ -3,18 +3,12 @@ package main
 import (
 	"bufio"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"os"
 	"strings"
 	"time"
 )
-
-func startserver(port int) {
-	log.Printf("Starting server on %d", port)
-	log.Fatal("Not implemented")
-}
 
 func read(delay int) {
 	var cache []string
@@ -37,7 +31,7 @@ func read(delay int) {
 	}()
 	for {
 		<-ticker.C
-		fmt.Printf("Sending %#v\n", cache)
+		// send(cache)
 		cache = []string{}
 	}
 }
