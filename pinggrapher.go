@@ -72,7 +72,7 @@ type Client struct {
 }
 
 type Stats struct {
-	Timestamp int64
+	Timestamp int64   `json:"timestamp"`
 	Average   float64 `json:"average"`
 	Min       float64 `json:"min"`
 	Max       float64 `json:"max"`

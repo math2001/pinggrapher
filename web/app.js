@@ -52,13 +52,15 @@ const chart = {
     })
   },
 
+  formatTime(timestamp) {
+    const date = new Date(timestamp * 1000)
+    return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+  },
+
   addStats(statsArr) {
-    // { min, max, average }
-    const last = this.chart.data.labels[this.chart.data.labels.length-1] || 0
-    let stats;
-    for (let i = 1; i <= statsArr.length; i++) {
-      stats = statsArr[i-1]
-      this.chart.data.labels.push(last + i)
+    // { min, max, average, timestamp }
+    for (const stats of statsArr) {
+      this.chart.data.labels.push(this.formatTime(stats.timestamp))
       this.chart.data.datasets[0].data.push(stats.average)
       this.chart.data.datasets[1].data.push(stats.min)
       this.chart.data.datasets[2].data.push(stats.max)
