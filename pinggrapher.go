@@ -187,10 +187,7 @@ func send(statsarr []Stats) {
 }
 
 func write(delay int, path string, pings chan float64) {
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		log.Fatal("Target file already exists.")
-	}
-	f, err := os.Create(path)
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatalf("Couldn't create '%s': %s", path, err)
 	}
