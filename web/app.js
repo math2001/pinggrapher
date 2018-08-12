@@ -38,10 +38,10 @@ const chart = {
         },
         {
           data: [],
-          type: 'line',
+          type: 'bar',
           label: '% ≥ 10 ms',
-          backgroundColor: 'transparent',
-          borderColor: colors.orange,
+          backgroundColor: colors.orange,
+          borderColor: 'transparent',
           yAxisID: '%',
           fill: false,
         }

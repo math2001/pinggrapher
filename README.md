@@ -22,6 +22,11 @@ command is just used to filter everything out and just print the milliseconds)
 $ ping 192.168.0.1 | awk  '/from/ { split($7, resArr, "="); print resArr[2] }' | pinggrapher
 ```
 
+And if you let it run long enough, you should get something that hopefully has
+less bars than this:
+
+![ping graph sample](./pinggrapher.png)
+
 ## What's it made of?
 
 A Go file which act as the web server, with [ws](https://github.com/gobwas/ws)
