@@ -16,6 +16,7 @@ const chart = {
       datasets: [
         {
           data: [],
+          backgroundColor: 'transparent',
           borderColor: colors.red,
           label: 'average',
           fill: false,
@@ -24,12 +25,14 @@ const chart = {
         {
           data: [],
           label: 'min',
+          backgroundColor: 'transparent',
           borderColor: colors.yellow,
           fill: false,
         },
         {
           data: [],
           label: 'max',
+          borderColor: 'transparent',
           backgroundColor: colors.purple,
           fill: false,
         },
@@ -49,9 +52,22 @@ const chart = {
         scales: {
           yAxes: [
             {
+              id: 'ms',
               ticks: {
                 beginAtZero: true,
                 callback: label => label + ' ms'
+              }
+            },
+            {
+              id: '%',
+              position: 'right',
+              gridLines: {
+                drawOnChartArea: false
+              },
+              ticks: {
+                beginAtZero: true,
+                suggestedMax: 100,
+                callback: label => label + '%'
               }
             }
           ]
