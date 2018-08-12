@@ -40,8 +40,10 @@ const chart = {
           data: [],
           type: 'line',
           label: '% ≥ 10 ms',
+          backgroundColor: 'transparent',
           borderColor: colors.orange,
           yAxisID: '%',
+          fill: false,
         }
       ]
     }
@@ -55,6 +57,9 @@ const chart = {
           display: true,
           text: 'Pings',
           position: 'top',
+        },
+        tooltips: {
+          mode: 'index'
         },
         scales: {
           yAxes: [
@@ -73,7 +78,6 @@ const chart = {
               },
               ticks: {
                 beginAtZero: true,
-                // suggestedMax: 100,
                 callback: label => label + '%'
               }
             }
