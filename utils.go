@@ -26,3 +26,13 @@ func Max(nums []float64) float64 {
 	}
 	return max
 }
+
+func AboveBy(ms float64, nums []float64) float64 {
+	abovecount := 0
+	for _, n := range nums {
+		if n >= ms {
+			abovecount++
+		}
+	}
+	return float64(abovecount) / float64(len(nums)) * 100
+}

@@ -81,7 +81,9 @@ type Client struct {
 
 // Stats are the intersting stuff. They are computed from a list of times
 type Stats struct {
-	Average   float64 `json:"average"`
+	Average float64 `json:"average"`
+	// the percentage of pings that took longer than x ms
+	Above     float64 `json:"above"`
 	Min       float64 `json:"min"`
 	Max       float64 `json:"max"`
 	Timestamp int64   `json:"timestamp"`
@@ -94,6 +96,7 @@ func NewStats(times []float64, timestamp int64) Stats {
 		Max:       Max(times),
 		Min:       Min(times),
 		Average:   Average(times),
+		Above:     AboveBy(10, times),
 	}
 }
 

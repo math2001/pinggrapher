@@ -36,6 +36,13 @@ const chart = {
           backgroundColor: colors.purple,
           fill: false,
         },
+        {
+          data: [],
+          type: 'line',
+          label: '% ≥ 10 ms',
+          borderColor: colors.orange,
+          yAxisID: '%',
+        }
       ]
     }
 
@@ -66,7 +73,7 @@ const chart = {
               },
               ticks: {
                 beginAtZero: true,
-                suggestedMax: 100,
+                // suggestedMax: 100,
                 callback: label => label + '%'
               }
             }
@@ -88,6 +95,7 @@ const chart = {
       this.chart.data.datasets[0].data.push(stats.average)
       this.chart.data.datasets[1].data.push(stats.min)
       this.chart.data.datasets[2].data.push(stats.max)
+      this.chart.data.datasets[3].data.push(stats.above)
     }
     this.chart.update()
   }
