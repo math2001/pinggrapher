@@ -1,7 +1,7 @@
 # Ping graph
 
 Graph pings in your browser. All it does is great a web server that reads number
-from the stdout, writes them to a file and every {delay} seconds, sends nice
+from the stdout, writes them to a file and every *{delay}* seconds, sends nice
 statistics to the client (through websockets).
 
 ## Why
@@ -26,6 +26,12 @@ And if you let it run long enough, you should get something that hopefully has
 less bars than this:
 
 ![ping graph sample](./pinggrapher.png)
+
+## Options
+
+```
+pinggrapher -help
+```
 
 ## What's it made of?
 
