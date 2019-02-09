@@ -10,13 +10,12 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
+	"github.com/sparrc/go-ping"
 )
 
 // Clients is a map with a mutex. People shouldn't touch .m themself, but use
@@ -100,25 +99,21 @@ func NewStats(times []float64, timestamp int64) Stats {
 	}
 }
 
-func read(pings chan float64) {
+func read(pings chan float64, host string) {
 	go func() {
-		var line string
-		var err error
-		reader := bufio.NewReader(os.Stdin)
-		for {
-			line, err = reader.ReadString('\n')
-			if err == io.EOF {
-				return
-			}
-			if err != nil {
-				log.Fatal(err)
-			}
-			ping, err := strconv.ParseFloat(strings.TrimSpace(line), 64)
-			if err != nil {
-				log.Printf("Couldn't convert '%s': %s", line, err)
-			}
+		log.Printf("Pinging %v", host)
+		pinger, err := ping.NewPinger(host)
+		if err != nil {
+			panic(err)
+		}
+		pinger.Count = 0
+		pinger.Interval = time.Second * 1
+		pinger.Timeout = time.Second * 5
+		pinger.OnRecv = func(pkt *ping.Packet) {
+			ping := float64(pkt.Rtt / time.Millisecond)
 			pings <- ping
 		}
+		pinger.Run() // blocks until finished
 	}()
 }
 
@@ -153,7 +148,7 @@ func startserver(port int, path string, pings chan float64) {
 	var clientidcount = 0
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("New client #%d.", clientidcount)
-		conn, _, _, err := ws.UpgradeHTTP(r, w, nil)
+		conn, _, _, err := ws.UpgradeHTTP(r, w)
 		if err != nil {
 			log.Print(err)
 			return
@@ -246,8 +241,11 @@ func main() {
 	flag.IntVar(&delay, "delay", 60, "seconds to wait before sending the data")
 	flag.StringVar(&path, "path", "./.pings", "path to the filename to store information")
 	flag.Parse()
+	if flag.NArg() != 1 {
+		log.Fatal("Usage: pinggrapher <hostname/IP>")
+	}
 	var pings = make(chan float64)
-	go read(pings)
+	go read(pings, flag.Args()[0])
 	go write(delay, path, pings)
 	startserver(port, path, pings)
 }
